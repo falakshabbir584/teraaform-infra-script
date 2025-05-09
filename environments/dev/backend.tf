@@ -1,7 +1,7 @@
 terraform {
  backend "gcs" {
-    credentials = file(var.SERVICE_ACCOUNT_FILE)
-    bucket  = var.BUCKET_NAME
+    credentials = "key.json"
+    bucket  = "cra-nps-terraform-bucket" ##Createt this bucket manually in gcp
     prefix  = "terraform/state"
  }
 }
