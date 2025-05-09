@@ -10,9 +10,6 @@ resource "google_storage_bucket" "bucket" {
   versioning {
     enabled = true
   }
-  encryption {
-    default_kms_key_name = var.KMS_KEY_NAME
-  }
   soft_delete_policy {
     retention_duration_seconds = 2592000
   }

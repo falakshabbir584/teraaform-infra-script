@@ -27,8 +27,3 @@ output "node_config_tags" {
   description = "Network tags applied to the node pool"
   value       = google_container_node_pool.primary_node_pool.node_config[0].tags
 }
-
-output "kms_key_id" {
-  value       = google_kms_crypto_key.gke_crypto_key.id
-  description = "KMS key self link for CMEK"
-}

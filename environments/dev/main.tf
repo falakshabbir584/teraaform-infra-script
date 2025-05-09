@@ -1,6 +1,25 @@
+module "bucket" {
+  source     = "../../modules/GCS_Bucket"
+  
+  BUCKET_NAME  = var.BUCKET_NAME
+  REGION       = var.REGION
+  KMS_KEY_NAME = var.KMS_KEY_NAME
+}
+
+module "KMS" {
+  source     = "../../modules/KMS"
+  
+  depends_on = [module.bucket]
+  PROJECT_ID           = var.PROJECT_ID
+  REGION       = var.REGION
+  KMS_KEY_RING_NAME    = var.KMS_KEY_RING_NAME
+  KMS_KEY_NAME = var.KMS_KEY_NAME
+}
+
 module "vpc" {
   source = "../../modules/VPC"
   
+  depends_on = [module.KMS]
   NETWORK_NAME        = var.NETWORK_NAME
   SUBNET_NAME         = var.SUBNET_NAME
   REGION              = var.REGION
@@ -59,18 +78,9 @@ module "gke_cluster" {
   MAXIMUM_NODE_COUNT   = var.MAXIMUM_NODE_COUNT
 }
 
-module "bucket" {
-  source     = "../../modules/GCS_Bucket"
-  depends_on = [module.gke_cluster]
-  
-  BUCKET_NAME  = var.BUCKET_NAME
-  REGION       = var.REGION
-  KMS_KEY_NAME = var.KMS_KEY_NAME
-}
-
 module "google_compute_engine" {
   source     = "./../../modules/Compute_Engine"
-  depends_on = [module.bucket]
+  depends_on = [module.gke_cluster]
   
   PROJECT_ID                  = var.PROJECT_ID
   COMPUTE_ENGINE_NAME         = var.COMPUTE_ENGINE_NAME
