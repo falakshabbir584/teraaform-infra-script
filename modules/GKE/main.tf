@@ -15,18 +15,6 @@ resource "google_project_iam_member" "gke_sa_iam_user" {
   member  = "serviceAccount:${google_service_account.gke_service_account.email}"
 }
 
-resource "google_kms_key_ring" "gke_key_ring" {
-  name     = var.KMS_KEY_RING_NAME
-  location = var.REGION
-  project  = var.PROJECT_ID
-}
-
-resource "google_kms_crypto_key" "gke_crypto_key" {
-  name     = var.KMS_KEY_NAME
-  key_ring = google_kms_key_ring.gke_key_ring.id
-  purpose  = "ENCRYPT_DECRYPT"
-}
-
 resource "google_container_cluster" "cluster" {
   name     = var.CLUSTER_NAME
   location = var.REGION
@@ -97,7 +85,7 @@ resource "google_container_cluster" "cluster" {
   }
   database_encryption {
     state    = "ENCRYPTED"
-    key_name = google_kms_crypto_key.gke_crypto_key.id
+    key_name = var.KMS_KEY_NAME
   }
 
   workload_identity_config {

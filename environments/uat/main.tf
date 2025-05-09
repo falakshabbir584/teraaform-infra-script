@@ -11,7 +11,7 @@ module "vpc" {
   SERVICES_RANGE      = var.SERVICES_RANGE
 }
 
-module "cloud_router" {
+module "cloud_router_nat" {
   source        = "../../modules/Cloud_Router_NAT"
   depends_on    = [module.vpc]
   
@@ -24,7 +24,7 @@ module "cloud_router" {
 
 module "artifact_registry" {
   source                     = "../../modules/Artifact_Registry"
-  depends_on                 = [module.cloud_router]
+  depends_on                 = [module.cloud_router_nat]
   
   REGION                     = var.REGION
   ARTIFACT_REGISTRY_NAME     = var.ARTIFACT_REGISTRY_NAME
@@ -37,9 +37,19 @@ module "NEG" {
   
 }
 
+module "KMS" {
+  source     = "../../modules/KMS"
+  
+  depends_on = [module.NEG]
+  PROJECT_ID           = var.PROJECT_ID
+  REGION       = var.REGION
+  KMS_KEY_RING_NAME    = var.KMS_KEY_RING_NAME
+  KMS_KEY_NAME = var.KMS_KEY_NAME
+}
+
 module "gke_cluster" {
   source     = "../../modules/GKE"
-  depends_on = [module.NEG]
+  depends_on = [module.KMS]
   
   CLUSTER_NAME         = var.CLUSTER_NAME
   REGION               = var.REGION
@@ -59,18 +69,9 @@ module "gke_cluster" {
   MAXIMUM_NODE_COUNT   = var.MAXIMUM_NODE_COUNT
 }
 
-module "bucket" {
-  source     = "../../modules/GCS_Bucket"
-  depends_on = [module.gke_cluster]
-  
-  BUCKET_NAME  = var.BUCKET_NAME
-  REGION       = var.REGION
-  KMS_KEY_NAME = var.KMS_KEY_NAME
-}
-
 module "google_compute_engine" {
   source     = "./../../modules/Compute_Engine"
-  depends_on = [module.bucket]
+  depends_on = [module.VPC]
   
   PROJECT_ID                  = var.PROJECT_ID
   COMPUTE_ENGINE_NAME         = var.COMPUTE_ENGINE_NAME
@@ -89,7 +90,7 @@ module "google_compute_engine" {
 
 module "Firewall_Rules" {
   source     = "./../../modules/Firewall_Rules"
-  depends_on = [module.bucket]
+  depends_on = [module.google_compute_engine]
   
   NETWORK_NAME                 = var.NETWORK_NAME
   COMPUTE_ENGINE_NAME          = var.COMPUTE_ENGINE_NAME
@@ -107,4 +108,13 @@ module "Global_Load_Balancer" {
   REGION             = var.REGION
   GLB_Address_Name   = var.GLB_Address_Name
   DOMAIN_NAME        = var.DOMAIN_NAME
+}
+
+module "bucket" {
+  source     = "../../modules/GCS_Bucket"
+  
+  depends_on = [module.gke_cluster]
+  BUCKET_NAME  = var.BUCKET_NAME
+  REGION       = var.REGION
+  KMS_KEY_NAME = var.KMS_KEY_NAME
 }
